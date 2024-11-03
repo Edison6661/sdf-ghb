@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шифрування паролів методом Плейфеєра</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input {
+            margin-bottom: 10px;
+            padding: 10px;
+            width: 300px;
+        }
+        button {
+            padding: 10px;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Шифрування паролів методом Плейфеєра</h1>
+    <label for="surname">Прізвище користувача:</label>
+    <input type="text" id="surname" placeholder="Введіть прізвище">
+    <br>
+    <label for="password">Пароль:</label>
+    <input type="text" id="password" placeholder="Введіть пароль">
+    <br>
+    <button onclick="encryptPassword()">Зашифрувати пароль</button>
+    
+    <div class="result" id="result"></div>
+
+    <script>
+        function createPlayfairMatrix(keyword) {
+            const alphabet = "абвгдеєжзиіїйклмнопрстуфхцчшщьюя'.";
+            const seen = new Set();
+            const uniqueKeyword = [];
+            
+            for (let char of keyword) {
+                if (!seen.has(char)) {
+                    seen.add(char);
+                    uniqueKeyword.push(char);
+                }
+            }
+            
+            const matrix = uniqueKeyword.slice();
+            for (let char of alphabet) {
+                if (!seen.has(char)) {
+                    matrix.push(char);
+                    seen.add(char);
+                }
+            }
+
+            return matrix;
+        }
+
+        function playfairEncrypt(plaintext, matrix) {
+            const pairs = [];
+            let i = 0;
+
+            // Замінюємо пробіли на букву-заповнювач
+            plaintext = plaintext.replace(/ /g, "'");
+            
+            while (i < plaintext.length) {
+                const a = plaintext[i];
+                if (i + 1 < plaintext.length) {
+                    const b = plaintext[i + 1];
+                    if (a === b) {
+                        pairs.push([a, "'"]);
+                        i++;
+                    } else {
+                        pairs.push([a, b]);
+                        i += 2;
+                    }
+                } else {
+                    pairs.push([a, "'"]); // Непарна кількість символів
+                    i++;
+                }
+            }
+
+            let encrypted = '';
+            const matrixSize = 5; // 5 колонок
+            for (const [a, b] of pairs) {
+                const rowA = Math.floor(matrix.indexOf(a) / matrixSize);
+                const colA = matrix.indexOf(a) % matrixSize;
+                const rowB = Math.floor(matrix.indexOf(b) / matrixSize);
+                const colB = matrix.indexOf(b) % matrixSize;
+
+                if (rowA === rowB) { // Один рядок
+                    encrypted += matrix[rowA * matrixSize + (colA + 1) % matrixSize];
+                    encrypted += matrix[rowB * matrixSize + (colB + 1) % matrixSize];
+                } else if (colA === colB) { // Один стовпець
+                    encrypted += matrix[((rowA + 1) % 7) * matrixSize + colA];
+                    encrypted += matrix[((rowB + 1) % 7) * matrixSize + colB];
+                } else { // Прямокутник
+                    encrypted += matrix[rowA * matrixSize + colB];
+                    encrypted += matrix[rowB * matrixSize + colA];
+                }
+            }
+
+            return encrypted;
+        }
+
+        function encryptPassword() {
+            const surname = document.getElementById("surname").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            if (!surname || !password) {
+                alert("Будь ласка, введіть прізвище та пароль.");
+                return;
+            }
+
+            const matrix = createPlayfairMatrix(surname);
+            const encryptedPassword = playfairEncrypt(password, matrix);
+
+            document.getElementById("result").innerText = 
+                `Зашифрований пароль: ${encryptedPassword}`;
+        }
+    </script>
+</body>
+</html>
